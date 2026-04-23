@@ -1,314 +1,312 @@
-# RiskBeacon — Pipeline Penilaian Risiko Kredit Otomatis dengan Analitik Prediktif dan Monitoring Real-Time
+﻿# RiskBeacon - Automated Credit Risk Scoring Pipeline with Predictive Analytics and Real-Time Monitoring
 
-> **Meminimalkan kerugian akibat gagal bayar, sambil tetap memberikan kredit kepada anggota yang layak.**
+> **Minimizing losses from defaults while maintaining credit access for eligible members.**
 
 ---
 
-## Daftar Isi
+## Table of Contents
 
-- [Tentang Proyek](#tentang-proyek)
-- [Latar Belakang Bisnis](#latar-belakang-bisnis)
-- [Tujuan dan Objektif](#tujuan-dan-objektif)
+- [About the Project](#about-the-project)
+- [Business Background](#business-background)
+- [Goals and Objectives](#goals-and-objectives)
 - [Dataset](#dataset)
-- [Arsitektur Sistem](#arsitektur-sistem)
-- [Gambaran Pipeline](#gambaran-pipeline)
-- [Analisis Data Eksploratif](#analisis-data-eksploratif)
-- [Pemodelan](#pemodelan)
-- [Simulasi Dampak Bisnis](#simulasi-dampak-bisnis)
-- [Logika Keputusan Kredit](#logika-keputusan-kredit)
-- [Struktur Proyek](#struktur-proyek)
-- [Teknologi yang Digunakan](#teknologi-yang-digunakan)
-- [Tim](#tim)
-- [Referensi](#referensi)
+- [System Architecture](#system-architecture)
+- [Pipeline Overview](#pipeline-overview)
+- [Exploratory Data Analysis](#exploratory-data-analysis)
+- [Modeling](#modeling)
+- [Business Impact Simulation](#business-impact-simulation)
+- [Credit Decision Logic](#credit-decision-logic)
+- [Project Structure](#project-structure)
+- [Technology Stack](#technology-stack)
+- [Team](#team)
+- [References](#references)
 
 ---
 
-## Tentang Proyek
+## About the Project
 
-**RiskBeacon** adalah sistem penilaian risiko kredit yang dirancang untuk menilai dan memantau probabilitas gagal bayar anggota sebelum keputusan kredit diambil.
+**RiskBeacon** is a credit risk assessment system designed to evaluate and monitor member default probability before credit decisions are made.
 
-RiskBeacon mentransformasi data historis peminjam menjadi **keputusan kredit yang objektif dan berbasis data** melalui pipeline analisis dan pemodelan terintegrasi yang berlandaskan prinsip **5C of Credit** — Character, Capacity, Capital, Collateral, dan Conditions.
+RiskBeacon transforms historical borrower data into **objective, data-driven credit decisions** through an integrated analytics and modeling pipeline based on the **5C of Credit** framework: Character, Capacity, Capital, Collateral, and Conditions.
 
-Sistem ini dibangun untuk melayani **lembaga perbankan** maupun **koperasi simpan pinjam**, menjembatani kesenjangan antara penilaian kredit berbasis kepercayaan sosial dengan analitik prediktif modern.
+The system is designed for both **banking institutions** and **credit cooperatives**, bridging traditional trust-based credit assessment with modern predictive analytics.
 
-### Komponen Sistem
+### System Components
 
-| Komponen | Deskripsi |
+| Component | Description |
 |---|---|
-| **Data Pipeline & Quality Monitoring** | Ingesti, transformasi, dan validasi data historis peminjam — menangani missing value, outlier, dan ketidakseimbangan kelas |
-| **Exploratory Data Analysis** | Insight bisnis dari perilaku peminjam yang dipetakan ke framework 5C |
-| **Predictive Modeling** | Model klasifikasi LightGBM untuk mengestimasi Probabilitas Gagal Bayar (PD) di level individu |
-| **Model Explainability** | Atribusi fitur berbasis SHAP untuk menjelaskan skor risiko setiap peminjam |
-| **Operational Risk Monitoring** | Segmentasi risiko ke dalam tiga tier — Low, Medium, dan High — berdasarkan distribusi PD Score |
+| **Data Pipeline & Quality Monitoring** | Ingestion, transformation, and validation of historical borrower data; handles missing values, outliers, and class imbalance |
+| **Exploratory Data Analysis** | Business insights from borrower behavior mapped to the 5C framework |
+| **Predictive Modeling** | LightGBM classification model to estimate individual Probability of Default (PD) |
+| **Model Explainability** | SHAP-based feature attribution to explain each borrower risk score |
+| **Operational Risk Monitoring** | Risk segmentation into three tiers (Low, Medium, High) based on PD score distribution |
 
 ---
 
-## Latar Belakang Bisnis
+## Business Background
 
-Seiring institusi keuangan — dari bank hingga koperasi simpan pinjam — terus memperluas jangkauannya, penilaian kredit yang subjektif tetap menjadi risiko operasional yang kritis. Ketergantungan berlebih pada reputasi sosial dan pertimbangan informal dapat menyebabkan:
+As financial institutions, from banks to credit cooperatives, continue to expand, subjective credit assessment remains a critical operational risk. Overreliance on social reputation and informal judgment can lead to:
 
-- Meningkatnya Non-Performing Loan (NPL)
-- Keputusan kredit yang tidak konsisten dan rentan bias
-- Kerugian finansial akibat gagal bayar yang sebenarnya dapat dicegah
+- Higher Non-Performing Loans (NPL)
+- Inconsistent and bias-prone credit decisions
+- Preventable financial losses from defaults
 
-Khususnya dalam konteks **Koperasi Simpan Pinjam**, dimensi `Character` pada penilaian 5C kredit masih sangat bergantung pada reputasi sosial — bukan berasal dari data atau angka. Hal ini menciptakan blind spot yang dirancang khusus untuk diatasi oleh RiskBeacon.
+In the context of **credit cooperatives**, the `Character` dimension in 5C credit analysis is still often based on social reputation rather than measurable data. This creates a blind spot that RiskBeacon is specifically built to address.
 
-> *"Sebelum RiskBeacon diterapkan, tingkat gagal bayar aktual sebesar 6,7% dari 150.000 data peminjam tidak terdeteksi pada level individu. Setelah model prediktif diterapkan pada 100.000 data peminjam yang berbeda, RiskBeacon mengidentifikasi 28,5% pemohon sebagai berindikasi gagal bayar — mengungkap risiko tersembunyi yang sebelumnya akan lolos tanpa pengawasan."*
+> *"Before RiskBeacon, an actual default rate of 6.7% in 150,000 borrower records was not detected at the individual level. After applying the predictive model to a different set of 100,000 borrower records, RiskBeacon identified 28.5% of applicants as default-indicated, revealing hidden risk that previously passed without proper monitoring."*
 
 ---
 
-## Tujuan dan Objektif
+## Goals and Objectives
 
-1. Membangun pipeline otomatis end-to-end dari data Excel mentah hingga penilaian risiko kredit
-2. Merepresentasikan framework **5C of Credit** melalui fitur data dan desain model
-3. Menghasilkan **skor Probabilitas Gagal Bayar (PD Score)** untuk setiap anggota
-4. Mensegmentasi anggota ke dalam tier **Low / Medium / High Risk**
-5. Memberikan rekomendasi limit kredit berdasarkan tier risiko
-6. Meminimalkan NPL sambil tetap mempertahankan akses kredit bagi anggota yang layak
+1. Build an end-to-end automated pipeline from raw Excel files to credit risk scoring
+2. Represent the **5C of Credit** framework through feature design and model architecture
+3. Generate a **Probability of Default (PD) score** for each member
+4. Segment members into **Low / Medium / High Risk** tiers
+5. Provide risk-based credit limit recommendations
+6. Minimize NPL while preserving credit access for eligible members
 
 ---
 
 ## Dataset
 
-| Properti | Detail |
+| Property | Details |
 |---|---|
-| Sumber | [Give Me Some Credit — Kaggle](https://www.kaggle.com/datasets/brycecf/give-me-some-credit-dataset) |
-| Asal | Kompetisi Credit Fusion, Kaggle 2011 |
-| Jumlah baris training | 150.000 |
-| Jumlah fitur | 11 kolom |
-| Variabel target | `SeriousDlqin2yrs` (1 = gagal bayar, 0 = tidak gagal bayar) |
-| Ketidakseimbangan kelas | ~6,7% tingkat gagal bayar |
+| Source | [Give Me Some Credit - Kaggle](https://www.kaggle.com/datasets/brycecf/give-me-some-credit-dataset) |
+| Origin | Credit Fusion Competition, Kaggle 2011 |
+| Training rows | 150,000 |
+| Features | 11 columns |
+| Target variable | `SeriousDlqin2yrs` (1 = default, 0 = non-default) |
+| Class imbalance | ~6.7% default rate |
 
-### Pemetaan Fitur ke 5C of Credit
+### Feature Mapping to 5C of Credit
 
-| Fitur | Dimensi 5C | Makna Bisnis |
+| Feature | 5C Dimension | Business Meaning |
 |---|---|---|
-| `SeriousDlqin2yrs` | — | Target: gagal bayar dalam 2 tahun |
-| `RevolvingUtilizationOfUnsecuredLines` | Capacity | % limit kartu kredit yang sudah terpakai |
-| `Age` | Character | Usia anggota — proksi panjang riwayat kredit |
-| `NumberOfTime30-59DaysPastDueNotWorse` | Character | Sinyal awal: keterlambatan 30–59 hari |
-| `DebtRatio` | Capacity | Total cicilan bulanan / penghasilan bulanan |
-| `MonthlyIncome` | Capacity | Indikator utama kemampuan membayar |
-| `NumberOfOpenCreditLinesAndLoans` | Capital | Total kewajiban kredit aktif |
-| `NumberOfTimes90DaysLate` | Character | Sinyal terkuat: riwayat tunggak 90+ hari |
-| `NumberRealEstateLoansOrLines` | Collateral | Kredit berbasis properti — menurunkan risiko |
-| `NumberOfTime60-89DaysPastDueNotWorse` | Character | Sinyal keterlambatan menengah |
-| `NumberOfDependents` | Capital | Beban finansial dari tanggungan keluarga |
+| `SeriousDlqin2yrs` | - | Target: default within 2 years |
+| `RevolvingUtilizationOfUnsecuredLines` | Capacity | Percentage of credit card limit already used |
+| `Age` | Character | Member age; proxy for credit history length |
+| `NumberOfTime30-59DaysPastDueNotWorse` | Character | Early warning signal: 30-59 day delinquency |
+| `DebtRatio` | Capacity | Total monthly installments divided by monthly income |
+| `MonthlyIncome` | Capacity | Core repayment ability indicator |
+| `NumberOfOpenCreditLinesAndLoans` | Capital | Total active credit obligations |
+| `NumberOfTimes90DaysLate` | Character | Strongest signal: 90+ day delinquency history |
+| `NumberRealEstateLoansOrLines` | Collateral | Property-backed credit, generally lowers risk |
+| `NumberOfTime60-89DaysPastDueNotWorse` | Character | Mid-level delinquency signal |
+| `NumberOfDependents` | Capital | Financial burden from family dependents |
 
 ---
 
-## Arsitektur Sistem
+## System Architecture
 
-```
-Data Excel (Koperasi)
-        │
-        ▼
-   Upload ke Storage
-        │
-        ▼
-┌─────────────────────────────┐
-│   Apache Airflow DAG        │
-│  ┌─────────────────────┐    │
-│  │ Extract             │    │
-│  │ Validasi Skema      │    │
-│  │ Transform           │    │
-│  │ Load ke Database    │    │
-│  └─────────────────────┘    │
-└─────────────────────────────┘
-        │
-        ▼
+```text
+Credit Cooperative Excel Data
+           |
+           v
+      Upload to Storage
+           |
+           v
++----------------------------------+
+|        Apache Airflow DAG        |
+|  +----------------------------+  |
+|  | Extract                    |  |
+|  | Schema Validation          |  |
+|  | Transform                  |  |
+|  | Load to Database           |  |
+|  +----------------------------+  |
++----------------------------------+
+           |
+           v
    Exploratory Data Analysis
-   (Seleksi Fitur WoE + IV)
-        │
-        ▼
-┌─────────────────────────────┐
-│   Model LightGBM            │
-│  Train / Test Split 80:20   │
-│  Hyperparameter Tuning      │
-│  Evaluasi: AUC, Recall,     │
-│  KS-Statistic, SHAP         │
-└─────────────────────────────┘
-        │
-        ▼
-   PD Score per Anggota (0,0 – 1,0)
-        │
-   ┌────┴────────┬────────────┐
-   ▼             ▼            ▼
-Low Risk     Medium Risk   High Risk
-Limit Tinggi Limit Sedang  Ditolak
+    (WoE + IV Feature Selection)
+           |
+           v
++----------------------------------+
+|         LightGBM Model           |
+|      Train/Test Split 80:20      |
+|      Hyperparameter Tuning       |
+| Eval: AUC, Recall, KS-Statistic, |
+|             SHAP                 |
++----------------------------------+
+           |
+           v
+    PD Score per Member (0.0-1.0)
+           |
+      +----+---------+----------+
+      |              |          |
+      v              v          v
+   Low Risk      Medium Risk  High Risk
+  High Limit    Medium Limit   Rejected
 ```
 
 ---
 
-## Gambaran Pipeline
+## Pipeline Overview
 
-### ETL — Apache Airflow
+### ETL - Apache Airflow
 
-| Tahap | Proses |
+| Stage | Process |
 |---|---|
-| **Extract** | Baca file Excel → parse ke DataFrame |
-| **Validate** | Cek skema, tipe data, duplikasi — kirim notifikasi error ke admin jika tidak valid |
-| **Transform** | Imputasi missing value, penanganan outlier, encoding, feature engineering |
-| **Load** | Simpan data bersih ke database / data lake |
+| **Extract** | Read Excel files and parse into DataFrame |
+| **Validate** | Check schema, data types, and duplication; send error notifications to admin if invalid |
+| **Transform** | Missing value imputation, outlier handling, encoding, feature engineering |
+| **Load** | Store clean data into database / data lake |
 
-### Analisis & Pemodelan
+### Analytics and Modeling
 
-| Tahap | Proses |
+| Stage | Process |
 |---|---|
-| **EDA** | Analisis distribusi, heatmap korelasi, pengecekan ketidakseimbangan kelas |
-| **Seleksi Fitur** | Weight of Evidence (WoE) + Information Value (IV) |
-| **Pemodelan** | LightGBM dengan penanganan imbalance (SMOTE / class weight) |
-| **Evaluasi** | ROC-AUC, Recall, KS-Statistic, explainability SHAP |
+| **EDA** | Distribution analysis, correlation heatmap, class imbalance checks |
+| **Feature Selection** | Weight of Evidence (WoE) + Information Value (IV) |
+| **Modeling** | LightGBM with imbalance handling (SMOTE / class weight) |
+| **Evaluation** | ROC-AUC, Recall, KS-Statistic, SHAP explainability |
 
 ---
 
-## Analisis Data Eksploratif
+## Exploratory Data Analysis
 
-Temuan utama dari EDA:
+Key EDA findings:
 
-- **Ketidakseimbangan kelas**: 93,3% tidak gagal bayar vs 6,7% gagal bayar — memerlukan SMOTE atau pembobotan kelas
-- **Prediktor terkuat** (berdasarkan IV): `NumberOfTimes90DaysLate`, `RevolvingUtilizationOfUnsecuredLines`, `NumberOfTime30-59DaysPastDueNotWorse`
-- **DebtRatio** memiliki outlier signifikan yang memerlukan pemotongan berbasis IQR
-- **MonthlyIncome** memiliki ~20% missing value — diimputasi menggunakan median per kelompok usia
-
+- **Class imbalance**: 93.3% non-default vs 6.7% default, requiring SMOTE or class weighting
+- **Top predictors** (based on IV): `NumberOfTimes90DaysLate`, `RevolvingUtilizationOfUnsecuredLines`, `NumberOfTime30-59DaysPastDueNotWorse`
+- **DebtRatio** has significant outliers requiring IQR-based capping
+- **MonthlyIncome** has around 20% missing values, imputed using median by age group
 
 ---
 
-## Pemodelan
+## Modeling
 
 ### Model: LightGBM
 
-LightGBM dipilih karena performa unggulnya pada data tabular yang tidak seimbang, kemampuan penanganan missing value bawaan, dan kecepatan training yang cocok untuk deployment pipeline produksi.
+LightGBM was selected for its strong performance on imbalanced tabular data, built-in missing value handling, and fast training speed suitable for production pipeline deployment.
 
-### Metrik Evaluasi
+### Evaluation Metrics
 
-| Metrik | Fungsi dalam Konteks Kredit |
+| Metric | Role in Credit Context |
 |---|---|
-| **ROC-AUC** | Kekuatan diskriminasi keseluruhan model |
-| **Recall** | Metrik prioritas — meminimalkan default yang tidak terdeteksi (False Negative = kerugian finansial nyata) |
-| **KS-Statistic** | Standar industri perbankan — pemisahan maksimum antara distribusi gagal bayar dan tidak gagal bayar |
-| **SHAP** | Explainability — membenarkan keputusan kredit individual kepada petugas dan regulator |
+| **ROC-AUC** | Overall model discrimination strength |
+| **Recall** | Priority metric, minimizing undetected defaults (False Negative = real financial loss) |
+| **KS-Statistic** | Banking industry standard, maximum separation between default and non-default distributions |
+| **SHAP** | Explainability support for credit officers and regulators |
 
-> **Mengapa Recall lebih diprioritaskan daripada Precision?**
-> Dalam risiko kredit, False Negative (memprediksi aman padahal akan gagal bayar) secara langsung menggerus modal institusi. False Positive (menolak peminjam yang sebenarnya aman) adalah peluang yang terlewat — menyakitkan namun tidak mengancam kelangsungan institusi. Oleh karena itu Recall menjadi target optimasi utama.
+> **Why prioritize Recall over Precision?**
+> In credit risk, False Negatives (predicting safe borrowers who actually default) directly erode institutional capital. False Positives (rejecting actually safe borrowers) are missed opportunities: painful but less existential. Therefore, Recall is the primary optimization target.
 
-### Interpretasi KS-Statistic
+### KS-Statistic Interpretation
 
-| Nilai KS | Kualitas Model |
+| KS Value | Model Quality |
 |---|---|
-| < 0,20 | Sangat lemah — bangun ulang |
-| 0,20 – 0,40 | Cukup memadai |
-| 0,40 – 0,60 | Bagus — siap produksi |
-| 0,60 – 0,75 | Sangat bagus |
-| > 0,75 | Sangat tinggi — validasi potensi overfitting |
+| < 0.20 | Very weak; rebuild recommended |
+| 0.20-0.40 | Fairly adequate |
+| 0.40-0.60 | Good; production-ready |
+| 0.60-0.75 | Very good |
+| > 0.75 | Extremely high; validate for overfitting risk |
 
-### Hasil Metrik yang Didapatkan
-- Nilai KS-Statistic : 0.58
+### Achieved Metrics
 
-- Nilai ROC-AUC : 0.92
-
-- Nilai Recall : 0.74
+- KS-Statistic: `0.58`
+- ROC-AUC: `0.92`
+- Recall: `0.74`
 
 ---
 
-## Simulasi Dampak Bisnis
+## Business Impact Simulation
 
-| | Sebelum (Baseline) | Sesudah (Model Diterapkan) |
+| | Before (Baseline) | After (Model Applied) |
 |---|---|---|
-| Populasi | 150.000 data peminjam | 100.000 data peminjam |
-| Tingkat gagal bayar | 6,7% (aktual) | 28,5% (prediksi) |
-| Interpretasi | Distribusi nyata di data training | Model mengungkap risiko tersembunyi di populasi baru |
+| Population | 150,000 borrower records | 100,000 borrower records |
+| Default rate | 6.7% (actual) | 28.5% (predicted) |
+| Interpretation | Real distribution in training data | Model reveals hidden risk in new population |
 
-> *Sebelum: distribusi gagal bayar aktual dari data training (n=150.000). Sesudah: hasil prediksi model pada populasi peminjam baru yang belum pernah dilihat sebelumnya (n=100.000). Tingginya prediksi gagal bayar mencerminkan kemampuan model dalam mengidentifikasi pola risiko yang tidak terlihat melalui penilaian manual.*
+> *Before: actual default distribution from training data (`n=150,000`). After: model predictions on a new, unseen borrower population (`n=100,000`). The higher predicted default rate reflects the model's ability to detect risk patterns that manual assessment can miss.*
 
-**Estimasi dampak finansial**: Dari populasi 80.000 peminjam, RiskBeacon mengidentifikasi ~22.800 pemohon berisiko tinggi. Dengan asumsi rata-rata pinjaman Rp 5.000.000, penolakan proaktif berpotensi mencegah estimasi kerugian hingga **Rp 114 miliar** dari kredit bermasalah.
+**Estimated financial impact**: From a population of 80,000 borrowers, RiskBeacon flags around 22,800 high-risk applicants. Assuming an average loan value of IDR 5,000,000, proactive rejection could prevent an estimated **IDR 114 billion** in problematic credit exposure.
 
 ---
 
-## Logika Keputusan Kredit
+## Credit Decision Logic
 
-Threshold PD Score ditentukan dari titik cut-off optimal KS-Statistic dan distribusi persentil PD Score pada data training.
+PD score thresholds are determined from the optimal KS-Statistic cut-off and PD score percentile distribution in training data.
 
-| Segmen Risiko | PD Score | Keputusan Kredit | Limit |
+| Risk Segment | PD Score | Credit Decision | Limit |
 |---|---|---|---|
-| 🟢 **Low Risk** | < 0,43 | Disetujui | Limit tinggi — suku bunga standar |
-| 🟡 **Medium Risk** | 0,43 – 0,53 | Disetujui dengan review | Limit moderat — review manual oleh petugas |
-| 🔴 **High Risk** | ≥ 0,53 | Ditolak | Tidak ada kredit — rujukan edukasi keuangan |
+| `Low Risk` | < 0.43 | Approved | High limit with standard interest |
+| `Medium Risk` | 0.43-0.53 | Approved with review | Moderate limit with manual officer review |
+| `High Risk` | >= 0.53 | Rejected | No credit; refer to financial literacy support |
 
-> Catatan: Threshold dikalibrasi berdasarkan tingkat gagal bayar portofolio (~6,7%) dan titik pemisahan optimal KS-Statistic. Threshold ini bukan konstanta tetap — rekalibrasi disarankan ketika diterapkan pada populasi peminjam baru.
-
----
-
-## Struktur Proyek
-
-```
-├── dags/                              # File DAG Apache Airflow
-│   └── etl_pipeline.py
-├── notebooks/
-│   ├── 01_eda.ipynb                   # Analisis Data Eksploratif
-│   ├── 02_feature_engineering.ipynb   # WoE, IV, feature engineering
-│   ├── 03_modeling.ipynb              # Training & evaluasi LightGBM
-│   └── 04_shap_explainability.ipynb   # Explainability SHAP
-├── src/
-│   ├── preprocessing.py
-│   ├── feature_selection.py           # WoE + IV
-│   └── model.py
-├── data/
-│   ├── raw/                           # cs-training.csv
-│   └── processed/
-├── outputs/
-│   ├── model/                         # Model LightGBM tersimpan
-│   └── reports/                       # Metrik evaluasi, plot SHAP
-├── requirements.txt
-└── README.md
-```
+> Note: Thresholds are calibrated based on portfolio default rate (~6.7%) and optimal KS-Statistic separation point. These are not fixed constants; recalibration is recommended for new borrower populations.
 
 ---
 
-## Teknologi yang Digunakan
+## Project Structure
 
-| Layer | Teknologi |
+```text
+|-- dags/                              # Apache Airflow DAG files
+|   `-- etl_pipeline.py
+|-- notebooks/
+|   |-- 01_eda.ipynb                   # Exploratory Data Analysis
+|   |-- 02_feature_engineering.ipynb   # WoE, IV, feature engineering
+|   |-- 03_modeling.ipynb              # LightGBM training and evaluation
+|   `-- 04_shap_explainability.ipynb   # SHAP explainability
+|-- src/
+|   |-- preprocessing.py
+|   |-- feature_selection.py           # WoE + IV
+|   `-- model.py
+|-- data/
+|   |-- raw/                           # cs-training.csv
+|   `-- processed/
+|-- outputs/
+|   |-- model/                         # Saved LightGBM model
+|   `-- reports/                       # Evaluation metrics, SHAP plots
+|-- requirements.txt
+`-- README.md
+```
+
+---
+
+## Technology Stack
+
+| Layer | Technology |
 |---|---|
-| **Orkestrasi** | Apache Airflow |
-| **Pemrosesan Data** | Python, Pandas, NumPy |
-| **Feature Engineering** | Scikit-learn, Weight of Evidence (custom) |
-| **Pemodelan** | LightGBM |
+| **Orchestration** | Apache Airflow |
+| **Data Processing** | Python, Pandas, NumPy |
+| **Feature Engineering** | Scikit-learn, custom Weight of Evidence |
+| **Modeling** | LightGBM |
 | **Explainability** | SHAP |
-| **Penanganan Imbalance** | Imbalanced-learn (SMOTE) |
-| **Evaluasi** | Metrik Scikit-learn, KS-Statistic |
-| **Penyimpanan** | PostgreSQL / CSV |
-| **Visualisasi** | Matplotlib, Seaborn |
+| **Imbalance Handling** | Imbalanced-learn (SMOTE) |
+| **Evaluation** | Scikit-learn metrics, KS-Statistic |
+| **Storage** | PostgreSQL / CSV |
+| **Visualization** | Matplotlib, Seaborn |
 | **Version Control** | Git, GitHub |
 
 ---
 
-## Tim
+## Team
 
-**FTDS Batch 037 — Hacktiv8 | Group 001**
+**FTDS Batch 037 - Hacktiv8 | Group 001**
 
-| Nama | Peran |
+| Name | Role |
 |---|---|
-| Austin Silitonga | Lead Project — Business Understanding |
-| Hernanda Rifaldi | Data Engineer — ETL Pipeline & Airflow |
-| Kesyia Patty | Data Analyst — EDA & Business Insight |
-| M.Nabil | Data Scientist — Feature Engineering & Modeling |
-| Rezha Aulia | Data Scientist — SHAP & KS-Statistic |
+| Austin Silitonga | Project Lead - Business Understanding |
+| Hernanda Rifaldi | Data Engineer - ETL Pipeline and Airflow |
+| Kesyia Patty | Data Analyst - EDA and Business Insights |
+| M. Nabil | Data Scientist - Feature Engineering and Modeling |
+| Rezha Aulia | Data Scientist - SHAP and KS-Statistic |
 
 ---
 
-## Referensi
+## References
 
-- Dataset Give Me Some Credit — [Kaggle](https://www.kaggle.com/datasets/brycecf/give-me-some-credit-dataset)
-- Credit Fusion & Will Cukierski. *Give Me Some Credit*. Kompetisi Kaggle, 2011
-- Pendekatan IRB Basel II/III — Bank for International Settlements
-- OJK POJK No.40/POJK.03/2019 — Kualitas Aset Bank Umum
+- Give Me Some Credit Dataset - [Kaggle](https://www.kaggle.com/datasets/brycecf/give-me-some-credit-dataset)
+- Credit Fusion and Will Cukierski. *Give Me Some Credit*. Kaggle Competition, 2011
+- Basel II/III IRB Approach - Bank for International Settlements
+- OJK Regulation No.40/POJK.03/2019 - Commercial Bank Asset Quality
 - Siddiqi, N. (2006). *Credit Risk Scorecards*. Wiley
-- SHAP: Lundberg & Lee (2017). *A Unified Approach to Interpreting Model Predictions*
+- SHAP: Lundberg and Lee (2017). *A Unified Approach to Interpreting Model Predictions*
 
 ---
 
 <p align="center">
-  Dibangun dengan tujuan — menjadikan kredit lebih adil, objektif, dan berbasis data.<br>
+  Built with one goal: making credit fairer, more objective, and data-driven.<br>
   <strong>RiskBeacon</strong> · FTDS Batch 037 · Hacktiv8 · 2025
 </p>
-"# RiskBeacon-credit-risk-probability" 
